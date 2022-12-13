@@ -22,7 +22,8 @@ class CreateRepositoryRecord:
 
 @dataclass(frozen=True)
 class CreateCommitRecord:
-    __slots__ = ['repo_id', 'repo_name', 'github_org', 'commit_sha', 'message', 'author_name', 'author_email', 'author_committed_at',
+    __slots__ = ['repo_id', 'repo_name', 'github_org', 'commit_sha', 'message', 'author_name', 'author_email',
+                 'author_committed_at',
                  'committer_name', 'committer_email', 'committer_committed_at', 'commit_parents', 'num_commit_parents',
                  'num_file_committed', 'commit_additions', 'commit_deletions', 'etl_load_date']
     repo_id: int
@@ -92,21 +93,74 @@ class CreatePullRecord:
 
 
 @dataclass(frozen=True)
+# "Pull Request Review Comment"
+# "Pull Request Review Comments are comments on a portion of the Pull Request's diff."
 class CreatePullReviewRecord:
-    __slots__ = ['org_name', 'repo_id', 'repo_name', 'pull_request_review_id', 'pull_id', 'pull_number', 'path',
-                 'original_commit_id', 'reviewed_by',
-                 'body', 'created_at', 'updated_at', 'author_association', 'etl_load_date']
+    __slots__ = ['org_name', 'repo_id', 'repo_name', 'pull_request_review_id', 'pull_request_url', 'pull_number',
+                 'file_path', 'original_commit_id', 'review_author',  # 'author_association',
+                 'body', 'created_at', 'updated_at', 'etl_load_date']
     org_name: str
     repo_id: int
     repo_name: str
+    # "The ID of the pull request review to which the comment belongs."
     pull_request_review_id: int
-    pull_id: int
+    pull_request_url: str
     pull_number: int
-    path: str
+    "The relative path of the file to which the comment applies."
+    file_path: str
     original_commit_id: str
-    reviewed_by: str
+    review_author: str
+    # author_association: str  # this is also not available
+    # "The text of the comment."
     body: str
     created_at: datetime
     updated_at: datetime
-    author_association: str
+    etl_load_date: datetime
+
+
+# Where to get the comment count, do we need it ready made or can it be queried
+
+
+@dataclass(frozen=True)
+class CreateWorkflowRunRecord:
+    __slots__ = ['org_name', 'repo_id', 'repo_name', 'workflow_run_id', 'name', 'head_branch',
+                 'head_sha', 'path', 'run_number', 'run_attempt', 'event', 'status', 'conclusion', 'workflow_id',
+                 'workflow_run_url', 'actor_name', 'triggering_actor_name', 'run_started_at', 'created_at', 'updated_at',
+                 'etl_load_date']
+    org_name: str
+    repo_id: int
+    repo_name: str
+    workflow_run_id: int
+    name: str
+    head_branch: str
+    head_sha: str
+    path: str
+    run_number: int
+    run_attempt: int
+    event: str
+    status: str
+    conclusion: str
+    workflow_id: int
+    workflow_run_url: str
+    actor_name: str
+    triggering_actor_name: str
+    run_started_at: datetime
+    created_at: datetime
+    updated_at: datetime
+    etl_load_date: datetime
+
+
+@dataclass(frozen=True)
+class CreateWorkflowRecord:
+    __slots__ = ['org_name', 'repo_id', 'repo_name', 'workflow_id', 'name', 'path', 'state', 'created_at', 'updated_at',
+                 'etl_load_date']
+    org_name: str
+    repo_id: int
+    repo_name: str
+    workflow_id: int
+    name: str
+    path: str
+    state: str
+    created_at: datetime
+    updated_at: datetime
     etl_load_date: datetime

@@ -1,0 +1,1 @@
+--what tables are full load and what are not
