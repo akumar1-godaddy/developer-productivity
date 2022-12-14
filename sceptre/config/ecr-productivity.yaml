@@ -1,0 +1,6 @@
+template_path: ecr-base.yaml
+parameters:
+  ECRMaxImageCount: "100"
+  ECRRepoName: productivity
+  ScProductVersion: 1.1.1
+  ProvisionedProductName: productivity

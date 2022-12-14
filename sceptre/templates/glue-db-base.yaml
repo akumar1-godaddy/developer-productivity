@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create a DRI Glue Database using provided variables.
+Parameters:
+  GlueDatabaseSCProvisioningArtifactName:
+    Type: String
+    Description: Version number of ServiceCatalog provisioned product (Glue Database).
+  DatabaseName:
+    Type: String
+    Description: Name of the database
+  Description:
+    Type: String
+    Description: Description of the glue database
+  LocationUri:
+    Type: String
+    Description: (optional) Location of the database.
+    Default: ""
+Resources:
+  EmrMonitoringGlueDatabase:
+    Type: AWS::ServiceCatalog::CloudFormationProvisionedProduct
+    Properties:
+      ProductName: GlueDatabase
+      ProvisioningArtifactName: !Ref GlueDatabaseSCProvisioningArtifactName
+      ProvisionedProductName: !Sub sc-glue-db-${DatabaseName}
+      ProvisioningParameters:
+        - Key: DatabaseName
+          Value: !Ref DatabaseName
+        - Key: Description
+          Value: !Ref Description
+        - Key: LocationUri
+          Value: !Ref LocationUri
+      Tags:
+        - Key: doNotShutDown
+          Value: true
+        - Key: teamName
+          Value: emr-monitoring
+        - Key: teamSlackChannel
+          Value: dp-emr-monitoring
+        - Key: organization
+          Value: DEEP

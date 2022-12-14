@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: IAM User product which allows creating a user with pre defined policies.
+Parameters:
+  UserName:
+    Type: String
+    Description: A name for the IAM user.
+  VariablesJSON:
+    Type: String
+    Description: A stringified json passing in the input parameters that need to be substituted for the given policy. (optional if using CustomPolicySuffix)
+    Default: ""
+  CustomPolicySuffix:
+    Type: String
+    Description: Suffix name if using custom Policy following format TeamName-custom-suffix (optional)
+    Default: ""
+  PolicyName:
+    Type: String
+    Description: A policy name from this pre defined list.
+    AllowedValues:
+      - "AlexaRankingsReadOnly"
+      - "CloudWatchAgentServerPolicy"
+      - "ComprehendReadOnly"
+      - "DynamodbReadOnly"
+      - "DynamodbReadWrite"
+      - "DynamodbReadWriteDelete"
+      - "ExecuteAPI"
+      - "FraudDetectorGetPrediction"
+      - "KinesisWriteOnly"
+      - "S3ReadOnly"
+      - "S3ReadWrite"
+      - "S3ReadWriteDelete"
+      - "GetIAMJWT"
+      - "CustomPolicy"
+  IAMUserManagerLambdaFunction:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: SSM Parameter for manager lambda arn from team's Service Account stack.
+    Default: /AdminParams/Team/IAMManager/IAMUserManagerLambdaFunction
+    AllowedValues:
+      - /AdminParams/Team/IAMManager/IAMUserManagerLambdaFunction
+Resources:
+  CustomPolicyIAMUser:
+    Type: Custom::IAMUser
+    Properties:
+      ServiceToken: !Ref IAMUserManagerLambdaFunction
+      UserName: !Ref UserName
+      PolicyName: !Ref PolicyName
+      CustomPolicySuffix: !Ref CustomPolicySuffix
+      VariablesJSON: !Ref VariablesJSON
+Outputs:
+  UserName:
+    Description: UserName of the IAM User
+    Value: !Ref UserName

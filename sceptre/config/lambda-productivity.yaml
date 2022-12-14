@@ -1,0 +1,16 @@
+template_path: lambda-base.yaml
+parameters:
+  LambdaName: productivity
+  MemorySize: "10240"
+  Runtime: "python3.8"
+  Timeout: "900"
+  ContainerImageUri: {{ var.account_id }}.dkr.ecr.{{ var.region }}.amazonaws.com/productivity:latest
+  ProvisioningArtifactName: 3.6.0
+  CustomIAMRoleNameSuffix: lambda-productivity
+  EnvironmentVariablesJson: |
+    {
+      "TARGET_S3_BUCKET": "gd-ckpetlbatch-{{ var.environment}}-util"
+    }
+dependencies:
+  - ecr-productivity.yaml
+  - iam-role-for-lambda-productivity.yaml

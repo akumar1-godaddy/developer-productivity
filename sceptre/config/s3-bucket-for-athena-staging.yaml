@@ -1,0 +1,41 @@
+template_path: s3-base.yaml
+parameters:
+  BucketNameSuffix: athena-staging
+  ServiceCatalogVersion: 1.10.0
+  MoveToGlacierStorageDays: "-1"
+  CustomBucketPolicyJSON: |
+    {
+         "Version": "2012-10-17",
+         "Id": "misc-athena-tmp",
+         "Statement": [
+             {
+                 "Sid": "Athenatmpread",
+                 "Effect": "Allow",
+                 "Principal": {
+                     "AWS": [
+                    "arn:aws:iam::{{ var.account_id }}:role/GD-AWS-USA-GPD-CKPEtlBatch-ReadOnly"
+
+                     ]
+                 },
+                 "Action": [
+                     "s3:GetObject",
+                     "s3:PutObject"
+                 ],
+                 "Resource": "arn:aws:s3:::gd-ckpetlbatch-{{ var.environment }}-athena-staging/*"
+             },
+             {
+                 "Sid": "Athenatmpreadbucket",
+                 "Effect": "Allow",
+                 "Principal": {
+                     "AWS": [
+                         "arn:aws:iam::{{ var.account_id }}:role/GD-AWS-USA-GPD-CKPEtlBatch-ReadOnly"
+                     ]
+                 },
+                 "Action": [
+                     "s3:ListBucket",
+                     "s3:GetBucketLocation"
+                 ],
+                 "Resource": "arn:aws:s3:::gd-ckpetlbatch-{{ var.environment }}-athena-staging"
+             }
+         ]
+     }

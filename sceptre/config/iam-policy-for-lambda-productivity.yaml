@@ -1,0 +1,40 @@
+template_path: iam-policy-base.yaml
+parameters:
+  PolicyNameSuffix: lambda-productivity
+  PolicyJSON: |
+    {
+       "Version": "2012-10-17",
+       "Statement": [
+       	{
+       		"Effect": "Allow",
+       		"Action": [
+       			"logs:CreateLogStream",
+       			"logs:CreateLogGroup",
+       			"logs:PutLogEvents"
+       		],
+       		"Resource": "arn:aws:logs:*:*:*"
+       	},
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:Get*",
+            "s3:Put*",
+            "s3:List*"
+          ],
+          "Resource": [
+            "arn:aws:s3:::*",
+            "arn:aws:s3:::*/*"
+          ]
+        },
+        {
+          "Action": [
+             "secretsmanager:GetResourcePolicy",
+              "secretsmanager:GetSecretValue",
+              "secretsmanager:DescribeSecret",
+              "secretsmanager:ListSecretVersionIds"
+          ],
+          "Resource": "arn:aws:secretsmanager:us-west-2:{{ var.account_id }}:secret:*",
+          "Effect": "Allow"
+        }       
+        ]
+     }

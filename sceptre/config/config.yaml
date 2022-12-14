@@ -1,0 +1,3 @@
+project_code: engdataing
+region: {{ var.region }}
+PortfolioId: port-ws67jkgm32vvg

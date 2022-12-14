@@ -1,0 +1,38 @@
+template_path: iam-policy-base.yaml
+parameters:
+  PolicyNameSuffix: airflow-execution-role-policy-extra
+  PolicyJSON: |
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Action": [
+                   "secretsmanager:GetResourcePolicy",
+                    "secretsmanager:GetSecretValue",
+                    "secretsmanager:DescribeSecret",
+                    "secretsmanager:ListSecretVersionIds"
+                ],
+                "Resource": "arn:aws:secretsmanager:us-west-2:{{ var.account_id }}:secret:*",
+                "Effect": "Allow"
+            },
+            {
+                "Action": "secretsmanager:ListSecrets",
+                "Resource": "*",
+                "Effect": "Allow"
+            },
+            {
+                "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:Query",
+                    "dynamodb:UpdateGlobalTable",
+                    "dynamodb:UpdateItem"
+                ],
+                "Effect": "Allow",
+                "Resource": "*"
+            }
+        ]
+    }

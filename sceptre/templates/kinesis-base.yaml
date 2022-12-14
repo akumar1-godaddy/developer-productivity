@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Launch Kinesis Stream product from SC
+Parameters:
+  ProvisioningArtifactName:
+    Type: String
+  CustomStreamName:
+    Type: String
+    Description: Name of Kinesis Stream
+    Default: ""
+  StreamShardCount:
+    Type: Number
+    Description: Shards for Kinesis Stream (between 1 and 5)
+  RetentionPeriodHours:
+    Type: Number
+    Description: (Optional) The number of hours for the data records that are stored in the Kinesis stream to remain accessible. You can increase the retention period up to 168 hours (7 days) or decrease it to a minimum of 24 hours. Defaults to 24 hours.
+    Default: 72
+    MinValue: 24
+    MaxValue: 168
+Resources:
+  Stream1:
+    Type: AWS::ServiceCatalog::CloudFormationProvisionedProduct
+    Properties:
+      ProductName: KinesisStream
+      ProvisioningArtifactName: !Ref ProvisioningArtifactName
+      ProvisionedProductName: !Sub ${CustomStreamName}-kinesis
+      ProvisioningParameters:
+        - Key: StreamShardCount
+          Value: !Ref StreamShardCount
+        - Key: CustomStreamName
+          Value: !Ref CustomStreamName
+        - Key: RetentionPeriodHours
+          Value: !Ref RetentionPeriodHours
+      Tags:
+        - Key: doNotShutDown
+          Value: true

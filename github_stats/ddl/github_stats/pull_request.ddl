@@ -1,45 +1,38 @@
-CREATE TABLE
-    github_pull_requests
-(
-    repo_id UUID NOT NULL,
-    additions             INTEGER,
-    author_login          TEXT,
-    author_association    TEXT,
-    author_avatar_url     TEXT,
-    author_name           TEXT,
-    base_ref_oid          TEXT,
-    base_ref_name         TEXT,
-    base_repository_name  TEXT,
-    body                  TEXT,
-    changed_files         INTEGER,
-    closed                BOOLEAN,
-    closed_at             TIMESTAMP(6) WITH TIME ZONE,
-    comment_count         INTEGER,
-    commit_count          INTEGER,
-    created_at            TIMESTAMP(6) WITH TIME ZONE,
-    created_via_email     BOOLEAN,
-    database_id           INTEGER NOT NULL,
-    deletions             INTEGER,
-    editor_login          TEXT,
-    head_ref_name         TEXT,
-    head_ref_oid          TEXT,
-    head_repository_name  TEXT,
-    is_draft              BOOLEAN,
-    label_count           INTEGER,
-    last_edited_at        TIMESTAMP(6) WITH TIME ZONE,
-    locked                BOOLEAN,
-    maintainer_can_modify BOOLEAN,
-    mergeable             TEXT,
-    merged                BOOLEAN,
-    merged_at             TIMESTAMP(6) WITH TIME ZONE,
-    merged_by             TEXT,
-    NUMBER INTEGER,
-    participant_count     INTEGER,
-    published_at          TIMESTAMP(6) WITH TIME ZONE,
-    review_decision       TEXT,
-    state                 TEXT,
-    title                 TEXT,
-    updated_at            TIMESTAMP(6) WITH TIME ZONE,
-    url                   TEXT,
-    labels JSONB DEFAULT jsonb_build_array() NOT NULL,
-    _mergestat_synced_at TIMESTAMP(6) WITH TIME ZONE DEFAULT now() NOT NULL,
+CREATE EXTERNAL TABLE `pull_request`(
+  `org_name` string,
+  `repo_id` int,
+  `repo_name` string,
+  `pull_id` int,
+  `pull_number` int,
+  `state` string,
+  `title` string,
+  `author` string,
+  `author_id` int,
+  `body` string,
+  `created_at` timestamp,
+  `updated_at` timestamp,
+  `closed_at` timestamp,
+  `merged_at` timestamp,
+  `is_merged` boolean,
+  `is_mergeable` boolean,
+  `mergeable_state` string,
+  `merged_by` string,
+  `comments` int,
+  `review_comments` int,
+  `commits` int,
+  `additions` int,
+  `deletions` int,
+  `changed_files` int,
+  `etl_load_utc_timestamp` timestamp)
+PARTITIONED BY (
+  `load_date` string)
+ROW FORMAT SERDE
+  'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+STORED AS INPUTFORMAT
+  'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+OUTPUTFORMAT
+  'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+LOCATION
+  's3://gd-ckpetlbatch-dev-private-util/db=developer_productivity/table=pull_request'
+TBLPROPERTIES (
+  'transient_lastDdlTime'='1670966508')

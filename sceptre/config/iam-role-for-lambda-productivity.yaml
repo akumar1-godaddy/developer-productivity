@@ -1,0 +1,16 @@
+template_path: iam-role-base.yaml
+parameters:
+  IAMRoleProvisioningName: "1.0.7"
+  RoleNameSuffix: lambda-productivity
+  AssumingServices:
+    - lambda.amazonaws.com
+    - s3.amazonaws.com
+
+  ManagedPolicyArns:
+    - !stack_output iam-policy-for-lambda-productivity.yaml::PolicyARN
+    - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+    - arn:aws:iam::aws:policy/AmazonEMRReadOnlyAccessPolicy_v2
+    - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+    - arn:aws:iam::{{ var.account_id }}:policy/AllowResourcesAccessToCloudWatchPolicy
+dependencies:
+  - iam-policy-for-lambda-productivity.yaml
