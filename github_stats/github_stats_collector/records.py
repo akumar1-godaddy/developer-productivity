@@ -125,8 +125,8 @@ class CreatePullReviewRecord:
 class CreateWorkflowRunRecord:
     __slots__ = ['org_name', 'repo_id', 'repo_name', 'workflow_run_id', 'head_branch',
                  'head_sha',  'run_number', 'run_attempt', 'event', 'status', 'conclusion', 'workflow_id',
-                 'workflow_run_url',  'run_started_at', 'created_at', 'updated_at',
-                 'etl_load_utc_timestamp']
+                 'workflow_run_url', 'run_duration_ms', 'run_started_at_utc_ts', 'created_at_utc_ts', 'updated_at_utc_ts',
+                 'etl_load_utc_ts']
     org_name: str
     repo_id: int
     repo_name: str
@@ -140,12 +140,11 @@ class CreateWorkflowRunRecord:
     conclusion: str
     workflow_id: int
     workflow_run_url: str
-    # actor_name: str
-    # triggering_actor_name: str
-    run_started_at: datetime
-    created_at: datetime
-    updated_at: datetime
-    etl_load_utc_timestamp: datetime
+    run_duration_ms: int
+    run_started_at_utc_ts: datetime
+    created_at_utc_ts: datetime
+    updated_at_utc_ts: datetime
+    etl_load_utc_ts: datetime
 
 
 @dataclass(frozen=True)
