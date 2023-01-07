@@ -155,13 +155,17 @@ def _get_repo_pulls(org_name: str, repo: Repository, since: datetime, until: dat
 
     for pull in repo.get_pulls(state='all'):
         if since <= pull.updated_at < until:
+            if pull.merged_by is not None:
+                merged_by = pull.merged_by.login
+            else:
+                merged_by = None
             pull_record = CreatePullRecord(org_name=org_name, repo_id=repo.id, repo_name=repo.name, pull_id=pull.id,
                                            pull_number=pull.number, state=pull.state, title=pull.title,
                                            author=pull.user.login, author_id=pull.user.id, body=pull.body,
                                            created_at=pull.created_at, updated_at=pull.updated_at,
                                            closed_at=pull.closed_at, merged_at=pull.merged_at,
                                            is_merged=pull.is_merged(), is_mergeable=pull.mergeable,
-                                           mergeable_state=pull.mergeable_state, merged_by=pull.merged_by,
+                                           mergeable_state=pull.mergeable_state, merged_by=merged_by,
                                            comments_cnt=pull.comments, review_comments_cnt=pull.review_comments,
                                            commits=pull.commits, additions=pull.additions, deletions=pull.deletions,
                                            changed_files=pull.changed_files, etl_load_utc_timestamp=datetime.utcnow()
