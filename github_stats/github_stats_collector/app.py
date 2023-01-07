@@ -10,7 +10,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
-from github_stats.github_stats_collector.utils import get_workflow_runs
+from utils import get_workflow_runs
 from records import CreateRepositoryRecord, CreateCommitRecord, CreateMemberRecord, CreatePullRecord, \
     CreatePullReviewRecord, CreateWorkflowRecord, CreateWorkflowRunRecord
 
