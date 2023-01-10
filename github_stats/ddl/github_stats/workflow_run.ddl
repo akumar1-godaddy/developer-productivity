@@ -1,8 +1,8 @@
 CREATE external TABLE workflow_run(
   org_name string,
-  repo_id int,
+  repo_id bigint,
   repo_name string,
-  workflow_run_id int,
+  workflow_run_id bigint,
   head_branch string,
   head_sha string,
   run_number int,
@@ -12,6 +12,7 @@ CREATE external TABLE workflow_run(
   conclusion string,
   workflow_id int,
   workflow_run_url string,
+  run_duration_ms bigint,
   run_started_at_utc_ts timestamp,
   created_at_utc_ts timestamp,
   updated_at_utc_ts timestamp,

@@ -43,6 +43,7 @@ def handler(event, context):
     # if since is None or until is None:
     since = (datetime.utcnow() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
     until = (datetime.utcnow()).replace(hour=0, minute=0, second=0, microsecond=0)
+    logger.info(f"value of input date parameters are since:{since} .. until:{until} ")
 
     # 1. get all the members of the org
     _get_org_members(org)
@@ -217,10 +218,12 @@ def _get_repo_workflows(org_name: str, repo: Repository):
 def _get_repo_workflow_runs(org_name: str, repo: Repository, since: datetime, until: datetime):
     logger.info(f"getting workflow runs for repo {repo.name}")
     workflow_runs = []
-    search_filter = f'created:>{since.strftime("%Y-%m-%d")}..{until.strftime("%Y-%m-%d")}'
+    search_filter = f'{since.strftime("%Y-%m-%d")}..{until.strftime("%Y-%m-%d")}'
 
     for workflow_run in get_workflow_runs(org_name=org_name, repo=repo.name, requester=repo._requester,
                                           created=search_filter):
+
+        run_duration_ms = getattr(workflow_run.timing(), 'run_duration_ms', -1)
         workflow_run_record = CreateWorkflowRunRecord(org_name=org_name, repo_id=repo.id, repo_name=repo.name,
                                                       workflow_run_id=workflow_run.id,
                                                       run_number=workflow_run.run_number,
@@ -233,7 +236,7 @@ def _get_repo_workflow_runs(org_name: str, repo: Repository, since: datetime, un
                                                       run_started_at_utc_ts=workflow_run.run_started_at,
                                                       created_at_utc_ts=workflow_run.created_at,
                                                       updated_at_utc_ts=workflow_run.updated_at,
-                                                      run_duration_ms=workflow_run.timing().run_duration_ms,
+                                                      run_duration_ms=run_duration_ms,
                                                       etl_load_utc_ts=datetime.utcnow()
                                                       )
 
