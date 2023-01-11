@@ -153,7 +153,7 @@ def _get_repo_commits(org_name: str, repo: Repository, since: datetime, until: d
 def _get_repo_pulls(org_name: str, repo: Repository, since: datetime, until: datetime):
     # logger.info(f"getting pulls for repo {repo.name}")
     pulls = []
-
+    """when a PR is merged its property updated_at is updated  """
     for pull in repo.get_pulls(state='all'):
         if since <= pull.updated_at < until:
             if pull.merged_by is not None:
