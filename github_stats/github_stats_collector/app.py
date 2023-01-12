@@ -218,7 +218,8 @@ def _get_repo_workflows(org_name: str, repo: Repository):
 def _get_repo_workflow_runs(org_name: str, repo: Repository, since: datetime, until: datetime):
     logger.info(f"getting workflow runs for repo {repo.name}")
     workflow_runs = []
-    search_filter = f'{since.strftime("%Y-%m-%d")}..{until.strftime("%Y-%m-%d")}'
+    until_for_search = until-timedelta(days=1)
+    search_filter = f'{since.strftime("%Y-%m-%d")}..{until_for_search.strftime("%Y-%m-%d")}'
 
     for workflow_run in get_workflow_runs(org_name=org_name, repo=repo.name, requester=repo._requester,
                                           created=search_filter):
