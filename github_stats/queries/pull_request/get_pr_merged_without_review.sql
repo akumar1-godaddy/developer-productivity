@@ -1,2 +1,8 @@
-select "repo_name","is_merged",  "pull_number","title","author",  "pull_id", "state", "comments", "review_comments", "org_name"
-from pull_request where is_merged=True  and "review_comments">0
+select
+    *
+from
+    pull_request_v2
+where
+        "review_comments_cnt"=0
+order by
+    created_at desc
