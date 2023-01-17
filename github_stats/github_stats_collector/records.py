@@ -63,8 +63,8 @@ class CreateMemberRecord:
 class CreatePullRecord:
     __slots__ = ['org_name', 'repo_id', 'repo_name', 'pull_id', 'pull_number', 'state', 'title', 'author', 'author_id',
                  'body', 'created_at', 'updated_at', 'closed_at', 'merged_at', 'is_merged', 'is_mergeable',
-                 'mergeable_state', 'merged_by', 'comments_cnt', 'review_comments_cnt', 'commits', 'additions', 'deletions',
-                 'changed_files', 'etl_load_utc_timestamp']
+                 'mergeable_state', 'merged_by', 'commits', 'additions', 'deletions',
+                 'changed_files', 'etl_load_utc_timestamp', 'comments_cnt', 'review_comments_cnt']
     org_name: str
     repo_id: int
     repo_name: str
@@ -83,13 +83,13 @@ class CreatePullRecord:
     is_mergeable: bool
     mergeable_state: str
     merged_by: str
-    comments_cnt: int
-    review_comments_cnt: int
     commits: int
     additions: int
     deletions: int
     changed_files: int
     etl_load_utc_timestamp: datetime
+    comments_cnt: int
+    review_comments_cnt: int
 
 
 @dataclass(frozen=True)
@@ -110,8 +110,6 @@ class CreatePullReviewRecord:
     file_path: str
     original_commit_id: str
     review_author: str
-    # author_association: str  # this is also not available
-    # "The text of the comment."
     body: str
     created_at: datetime
     updated_at: datetime
@@ -124,8 +122,9 @@ class CreatePullReviewRecord:
 @dataclass(frozen=True)
 class CreateWorkflowRunRecord:
     __slots__ = ['org_name', 'repo_id', 'repo_name', 'workflow_run_id', 'head_branch',
-                 'head_sha',  'run_number', 'run_attempt', 'event', 'status', 'conclusion', 'workflow_id',
-                 'workflow_run_url', 'run_duration_ms', 'run_started_at_utc_ts', 'created_at_utc_ts', 'updated_at_utc_ts',
+                 'head_sha', 'run_number', 'run_attempt', 'event', 'status', 'conclusion', 'workflow_id',
+                 'workflow_run_url', 'run_duration_ms', 'run_started_at_utc_ts', 'created_at_utc_ts',
+                 'updated_at_utc_ts',
                  'etl_load_utc_ts']
     org_name: str
     repo_id: int

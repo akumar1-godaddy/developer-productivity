@@ -218,12 +218,11 @@ def _get_repo_workflows(org_name: str, repo: Repository):
 def _get_repo_workflow_runs(org_name: str, repo: Repository, since: datetime, until: datetime):
     logger.info(f"getting workflow runs for repo {repo.name}")
     workflow_runs = []
-    until_for_search = until-timedelta(days=1)
+    until_for_search = until - timedelta(days=1)
     search_filter = f'{since.strftime("%Y-%m-%d")}..{until_for_search.strftime("%Y-%m-%d")}'
 
     for workflow_run in get_workflow_runs(org_name=org_name, repo=repo.name, requester=repo._requester,
                                           created=search_filter):
-
         run_duration_ms = getattr(workflow_run.timing(), 'run_duration_ms', -1)
         workflow_run_record = CreateWorkflowRunRecord(org_name=org_name, repo_id=repo.id, repo_name=repo.name,
                                                       workflow_run_id=workflow_run.id,
@@ -247,16 +246,14 @@ def _get_repo_workflow_runs(org_name: str, repo: Repository, since: datetime, un
 
 
 def _write_to_s3(df: pd.DataFrame, table_name: str):
-    logger.info(f"writing data for {table_name}")
-    path: str = f's3://{target_s3_bucket}/db={db_name}/table={table_name}/load_date={load_date}/data.parquet'
-    wr.s3.to_parquet(
-        df=df,
-        path=path
-        # mode='overwrite'
-    )
-    logger.info(f"data load complete for {table_name}")
-
-# def _persist_to_s3(dataset_type,  ):
-# if __name__ == "__main__":
-#     print("in main")
-#     _start_data_extraction()
+    if not df.empty:
+        logger.info(f"writing data for {table_name}")
+        path: str = f's3://{target_s3_bucket}/db={db_name}/table={table_name}/load_date={load_date}/data.parquet'
+        wr.s3.to_parquet(
+            df=df,
+            path=path
+            # mode='overwrite'
+        )
+        logger.info(f"data load complete for {table_name}")
+    else:
+        logger.info(f"data frame is empty for {table_name}")

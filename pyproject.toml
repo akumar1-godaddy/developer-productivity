@@ -5,9 +5,11 @@ description = ""
 authors = ["akumar1-godaddy <akumar1@godaddy.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.10"
 PyGithub = "^1.57"
 boto3 = "^1.26.24"
+awswrangler = "^2.19.0"
+aws-lambda-powertools = "^2.6.0"
 
 [tool.poetry.dev-dependencies]
 
