@@ -34,6 +34,7 @@ def handler(event, context):
     until = event.get('until', None)
     logger.info(f"starting GitHub Data Extraction with input {event}")
     org = _get_orgs()
+
     if since is None or until is None:
         since = (datetime.utcnow() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
         until = (datetime.utcnow()).replace(hour=0, minute=0, second=0, microsecond=0)
@@ -41,10 +42,7 @@ def handler(event, context):
         since = datetime.strptime(since, '%Y-%m-%d')
         until = datetime.strptime(until, '%Y-%m-%d')
 
-    # if since is None or until is None:
-    # since = (datetime.utcnow() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-    # until = (datetime.utcnow()).replace(hour=0, minute=0, second=0, microsecond=0)
-    logger.info(f"value of input date parameters are since:{since} .. until:{until} ")
+    logger.info(f"value of date parameters are since:{since} .. until:{until} ")
 
     # 1. get all the members of the org
     _get_org_members(org, since)
@@ -82,7 +80,7 @@ def _get_org_members(org: Organization, since: datetime):
     members = []
     for member in org.get_members():
         member_record = CreateMemberRecord(org_name=org_name, member_id=member.id,
-                                           name=member.login, role=member.type, email=member.email,
+                                           name=member.login, role=member.type,
                                            is_site_admin=member.site_admin, created_at=member.created_at,
                                            updated_at=member.updated_at, etl_load_utc_timestamp=datetime.utcnow())
 
@@ -131,10 +129,8 @@ def _get_repo_commits(org_name: str, repo: Repository, since: datetime, until: d
             commit_record = CreateCommitRecord(repo_id=repo_id, repo_name=repo.name, github_org=org_name,
                                                commit_sha=commit.sha,
                                                message=commit_obj.message, author_name=commit_obj.author.name,
-                                               author_email=commit_obj.author.email,
                                                author_committed_at=commit_obj.author.date,
                                                committer_name=commit_obj.committer.name,
-                                               committer_email=commit_obj.committer.email,
                                                committer_committed_at=commit_obj.committer.date,
                                                num_commit_parents=num_commit_parents,
                                                num_file_committed=num_file_committed,
@@ -250,7 +246,7 @@ def _write_to_s3(df: pd.DataFrame, table_name: str, since: datetime):
     if not df.empty:
         logger.info(f"writing data for {table_name}")
         table_load_date = since.strftime("%Y-%m-%d")
-        path: str = f's3://gd-ckpetlbatch-dev-private-util/db={db_name}/table={table_name}/load_date={table_load_date}/data.parquet'
+        path: str = f's3://{target_s3_bucket}/db={db_name}/table={table_name}/load_date={table_load_date}/data.parquet'
         wr.s3.to_parquet(
             df=df,
             path=path
@@ -261,8 +257,8 @@ def _write_to_s3(df: pd.DataFrame, table_name: str, since: datetime):
         logger.info(f"data frame is empty for {table_name}")
 
 
-if __name__ == "__main__":
-    print("in main")
-    until = datetime.strptime('2023-01-16', '%Y-%m-%d')
-    since = until - timedelta(days=1)
-    handler(since, until)
+# if __name__ == "__main__":
+#     print("in main")
+#     until = datetime.strptime('2023-01-16', '%Y-%m-%d')
+#     since = until - timedelta(days=1)
+#     handler(since, until)

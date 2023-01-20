@@ -3,7 +3,6 @@ CREATE EXTERNAL TABLE `member_history`(
   `member_id` int,
   `name` string,
   `role` string,
-  `email` string,
   `is_site_admin` boolean,
   `created_at` timestamp,
   `updated_at` timestamp,

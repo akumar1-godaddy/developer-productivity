@@ -22,9 +22,9 @@ class CreateRepositoryRecord:
 
 @dataclass(frozen=True)
 class CreateCommitRecord:
-    __slots__ = ['repo_id', 'repo_name', 'github_org', 'commit_sha', 'message', 'author_name', 'author_email',
+    __slots__ = ['repo_id', 'repo_name', 'github_org', 'commit_sha', 'message', 'author_name',
                  'author_committed_at',
-                 'committer_name', 'committer_email', 'committer_committed_at', 'num_commit_parents',
+                 'committer_name',  'committer_committed_at', 'num_commit_parents',
                  'num_file_committed', 'commit_additions', 'commit_deletions', 'etl_load_utc_timestamp']
     repo_id: int
     repo_name: str
@@ -32,10 +32,8 @@ class CreateCommitRecord:
     commit_sha: str
     message: str
     author_name: str
-    author_email: int
     author_committed_at: datetime
     committer_name: str
-    committer_email: str
     committer_committed_at: datetime
     num_commit_parents: int
     num_file_committed: int
@@ -46,13 +44,12 @@ class CreateCommitRecord:
 
 @dataclass(frozen=True)
 class CreateMemberRecord:
-    __slots__ = ['org_name', 'member_id', 'name', 'role', 'email', 'is_site_admin',
+    __slots__ = ['org_name', 'member_id', 'name', 'role', 'is_site_admin',
                  'created_at', 'updated_at', 'etl_load_utc_timestamp']
     org_name: str
     member_id: int
     name: str
     role: str
-    email: str
     is_site_admin: bool
     created_at: datetime
     updated_at: datetime

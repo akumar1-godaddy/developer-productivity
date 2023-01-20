@@ -3,7 +3,6 @@ CREATE external TABLE organization(
   name string,
   description string COMMENT '',
   disk_usage integer COMMENT '',
-  email string COMMENT '',
   login string COMMENT '',
   created_at timestamp COMMENT '',
 )
