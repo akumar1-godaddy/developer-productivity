@@ -18,7 +18,6 @@ logger = Logger(service="github_stats")
 token = parameters.get_secret("github_auth_token", transform="json")
 assert isinstance(token, dict)
 target_s3_bucket = os.environ.get("TARGET_S3_BUCKET")
-load_date = (datetime.utcnow().date()).strftime("%Y-%m-%d")
 db_name = 'developer_productivity'
 
 github = Github(token["github_pat"])
@@ -31,38 +30,40 @@ _repo_workflow_runs_df = []
 
 
 def handler(event, context):
-    """
-    Lambda entrypoint
-    :param event
-    :param context
-    :return: None
-    """
-    logger.info("starting GitHub Data Extraction")
+    since = event.get('since', None)
+    until = event.get('until', None)
+    logger.info(f"starting GitHub Data Extraction with input {event}")
     org = _get_orgs()
+    if since is None or until is None:
+        since = (datetime.utcnow() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        until = (datetime.utcnow()).replace(hour=0, minute=0, second=0, microsecond=0)
+    else:
+        since = datetime.strptime(since, '%Y-%m-%d')
+        until = datetime.strptime(until, '%Y-%m-%d')
 
     # if since is None or until is None:
-    since = (datetime.utcnow() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-    until = (datetime.utcnow()).replace(hour=0, minute=0, second=0, microsecond=0)
+    # since = (datetime.utcnow() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    # until = (datetime.utcnow()).replace(hour=0, minute=0, second=0, microsecond=0)
     logger.info(f"value of input date parameters are since:{since} .. until:{until} ")
 
     # 1. get all the members of the org
-    _get_org_members(org)
+    _get_org_members(org, since)
     # 2. get all the repos of the org
     _get_repos(org, since, until)
     # 3. get all the repo commits for the org
     final_commits_df = pd.concat(_repo_commits_df)
-    _write_to_s3(final_commits_df, 'commit')
+    _write_to_s3(final_commits_df, 'commit', since)
     # 4. get all the open pull requests for the org
     final_pulls_df = pd.concat(_repo_pulls_df)
-    _write_to_s3(final_pulls_df, 'pull_request')
+    _write_to_s3(final_pulls_df, 'pull_request', since)
     # 5. get all the pull request review comments_cnt for all repos of the org
     final_pulls_review_comments_df = pd.concat(_repo_pulls_review_df)
-    _write_to_s3(final_pulls_review_comments_df, 'pull_request_review_comment')
+    _write_to_s3(final_pulls_review_comments_df, 'pull_request_review_comment', since)
     # 6. get all the workflows for all repos of the org
     final_workflows_df = pd.concat(_repo_workflows_df)  # 6
-    _write_to_s3(final_workflows_df, 'workflow_history')
+    _write_to_s3(final_workflows_df, 'workflow_history', since)
     final_workflow_runs_df = pd.concat(_repo_workflow_runs_df)  # 6
-    _write_to_s3(final_workflow_runs_df, 'workflow_run')
+    _write_to_s3(final_workflow_runs_df, 'workflow_run', since)
     return "Productivity Data Downloaded!"
 
 
@@ -74,7 +75,7 @@ def _get_orgs() -> Organization:
     return org[0]  # only returning org dna for now
 
 
-def _get_org_members(org: Organization):
+def _get_org_members(org: Organization, since: datetime):
     logger.info(f"""Get all members for the org organizations""")
     org_name = org.login
     logger.info(f"getting members for org  {org_name}")
@@ -88,7 +89,7 @@ def _get_org_members(org: Organization):
         members.append(asdict(member_record))
     df = pd.DataFrame.from_records(members)
     logger.info(f"writing data for member")
-    _write_to_s3(df, 'member_history')
+    _write_to_s3(df, 'member_history', since)
     logger.info(f"data load complete for member")
 
 
@@ -113,7 +114,7 @@ def _get_repos(org: Organization, since: datetime, until: datetime):
         _get_repo_workflows(org_name=org_name, repo=repo)
     df = pd.DataFrame.from_records(repos)
     logger.info(f"writing data for repository")
-    _write_to_s3(df, 'repository_history')
+    _write_to_s3(df, 'repository_history', since)
     logger.info(f"data load complete for repository")
 
 
@@ -182,7 +183,7 @@ def _get_repo_pulls_review(org_name: str, repo: Repository, since: datetime, unt
     pull_reviews = []
 
     for review in repo.get_pulls_review_comments(since=since):
-        if review.updated_at <= until:
+        if review.updated_at < until:
             extract_pull_number = urlparse(review.pull_request_url).path.rstrip('/').split('/')[-1]
             pull_number = int(extract_pull_number)
 
@@ -245,10 +246,11 @@ def _get_repo_workflow_runs(org_name: str, repo: Repository, since: datetime, un
     _repo_workflow_runs_df.append(df)
 
 
-def _write_to_s3(df: pd.DataFrame, table_name: str):
+def _write_to_s3(df: pd.DataFrame, table_name: str, since: datetime):
     if not df.empty:
         logger.info(f"writing data for {table_name}")
-        path: str = f's3://{target_s3_bucket}/db={db_name}/table={table_name}/load_date={load_date}/data.parquet'
+        table_load_date = since.strftime("%Y-%m-%d")
+        path: str = f's3://gd-ckpetlbatch-dev-private-util/db={db_name}/table={table_name}/load_date={table_load_date}/data.parquet'
         wr.s3.to_parquet(
             df=df,
             path=path
@@ -257,3 +259,10 @@ def _write_to_s3(df: pd.DataFrame, table_name: str):
         logger.info(f"data load complete for {table_name}")
     else:
         logger.info(f"data frame is empty for {table_name}")
+
+
+if __name__ == "__main__":
+    print("in main")
+    until = datetime.strptime('2023-01-16', '%Y-%m-%d')
+    since = until - timedelta(days=1)
+    handler(since, until)
