@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: SQS queuename
+Parameters:
+  CustomPolicyJSON:
+    Type: String
+    Description: Custom JSON SQS Queue Policy Document ex. https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-creating-custom-policies-access-policy-examples.html
+    Default: ""
+  NeedEncryption:
+    Type: String
+    Description: Select true if encryption at rest needs to be enabled. Currently known to cause issues with SQS->SNS
+    Default: false
+    AllowedValues:
+      - true
+      - false
+  QueueName:
+    Type: String
+    Description: Name of the sqs queue
+  VisibilityTimeout:
+    Type: Number
+    Description: The length of time during which a message will be unavailable after a message is delivered from the queue.
+    Default: 1200
+    MinValue: 0
+    MaxValue: 43200
+  MessageRetentionPeriod:
+    Type: Number
+    Description: The number of seconds that Amazon SQS retains a message.
+    Default: 345600
+    MinValue: 60
+    MaxValue: 1209600
+  DeadLetterTargetArn:
+    Type: String
+    Description: (optional) ARN of the dead-letter queue to which Amazon SQS moves messages after the value of maxReceiveCount is exceeded.
+    Default: ""
+  MaxReceiveCount:
+    Type: String
+    Description: (Optional) The number of times a message is delivered to the source queue before being moved to the dead-letter queue.
+    Default: 1
+  DoNotShutDown:
+    Type: String
+    Description: enable to set the doNotShutDown tag
+    Default: true
+Resources:
+  SQSQueue:
+    Type: AWS::ServiceCatalog::CloudFormationProvisionedProduct
+    Properties:
+      ProductName: SQS
+      ProvisioningArtifactName: 1.0.8
+      ProvisionedProductName: !Sub sqs-${QueueName}
+      ProvisioningParameters:
+        - Key: CustomPolicyJSON
+          Value: !Ref CustomPolicyJSON
+        - Key: NeedEncryption
+          Value: !Ref NeedEncryption
+        - Key: QueueName
+          Value: !Ref QueueName
+        - Key: VisibilityTimeout
+          Value: !Ref VisibilityTimeout
+        - Key: MessageRetentionPeriod
+          Value: !Ref MessageRetentionPeriod
+        - Key: DeadLetterTargetArn
+          Value: !Ref DeadLetterTargetArn
+        - Key: MaxReceiveCount
+          Value: !Ref MaxReceiveCount
+      Tags:
+        - Key: doNotShutDown
+          Value: !Ref DoNotShutDown
+
+Outputs:
+  QueueArn:
+    Description: Arn of created SQS
+    Value: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${QueueName}

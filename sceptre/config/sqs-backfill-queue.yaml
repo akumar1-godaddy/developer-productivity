@@ -1,0 +1,22 @@
+template_path: sqs-base.yaml
+parameters:
+  QueueName: productivity-backfill-queue
+  CustomPolicyJSON: |
+      {   
+        "Version": "2012-10-17",
+        "Id": "AllowOwnAccountAccess",
+        "Statement" : [{
+            "Sid": "1", 
+            "Effect": "Allow",           
+            "Principal": {
+              "AWS": [
+                  "{{ var.account_id }}"
+              ]
+            },
+            "Action": [
+              "sqs:SendMessage",
+              "sqs:ReceiveMessage"
+            ], 
+            "Resource": "arn:aws:sqs:{{ var.region }}:{{ var.account_id }}:productivity-backfill-queue"  
+        }]
+      }

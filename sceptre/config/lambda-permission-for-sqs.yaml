@@ -1,0 +1,11 @@
+template_path: lambda-permission-base.yaml
+
+parameters:
+  FunctionName: !stack_output lambda-productivity.yaml::LambdaFunctionName
+  Principal: "sqs.amazonaws.com"
+  SourceArn: !stack_output sqs-backfill-queue.yaml::QueueArn
+  PermissionProductName: sqs-for-lambda-backfill
+
+dependencies:
+  - sqs-backfill-queue.yaml
+  - lambda-productivity.yaml

@@ -1,0 +1,130 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Sets up a event source mapping between a lambda and trigger source.
+Parameters:
+  EventSourceArn:
+    Type: String
+    Description: (Required for non-Kafka sources) The arn of the resource which should trigger the Lambda
+
+  FunctionName:
+    Type: String
+    Description: The name or ARN of the Lambda function.
+
+  StartingPosition:
+    Type: String
+    Description: (optional) The position in a DynamoDB or Kinesis stream where Lambda starts reading.
+    Default: ''
+
+  Enabled:
+    Type: String
+    Description: Indicates whether Lambda begins polling the event source.
+    Default: 'true'
+
+  BatchSize:
+    Type: Number
+    Description: The largest number of records that Lambda retrieves from your event source when invoking your function.
+    Default: '1'
+
+  BisectBatchOnFunctionError:
+    Type: String
+    Description: If the function returns an error, split the batch in two and retry.
+    Default: 'false'
+
+  DiscardedRecordDestinationArn:
+    Type: String
+    Description: The ARN of the destination resource (SQS queue or SNS topic) to which discarded records will be written.
+    Default: ''
+
+  MaximumBatchingWindowInSeconds:
+    Type: Number
+    Description: The maximum amount of time to gather records before invoking the function, in seconds.
+    Default: '0'
+
+  MaximumRecordAgeInSeconds:
+    Type: Number
+    Description: The maximum age of a record in seconds that Lambda sends to a function for processing.
+    Default: '604800'
+
+  MaximumRetryAttempts:
+    Type: Number
+    Description: (Streams) The maximum number of times to retry when the function returns an error.
+    Default: '0'
+
+  ParallelizationFactor:
+    Type: Number
+    Description: (Streams) The number of batches to process from each shard concurrently.
+    Default: '1'
+
+  Topics:
+    Type: List<String>
+    Description: '(Required if using a Kafka source) The name of the Kafka topic'
+    Default: ""
+
+  VPCSubnet:
+    Type: String
+    Default: ""
+    Description: "(Required if using a Kafka source) The subnets associated with your VPC. Lambda connects to these subnets to fetch data from your self-managed Apache Kafka cluster"
+
+  VPCSecurityGroup:
+    Type: String
+    Default: ""
+    Description: "(Required if using a Kafka source) The VPC security group used to manage access to your self-managed Apache Kafka brokers"
+
+  KafkaBootstrapEndpoints:
+    Type: String
+    Default: ""
+    Description: "(Required if using a Kafka source) The list of endpoints of Kafka brokers."
+
+  FilterPattern:
+    Type: String
+    Description: "A string that defines the filter criteria that determine whether Lambda should process an event"
+    Default: ""
+
+  KafkaAuthenticationType:
+    Type: String
+    Description: Kafka event source auth type
+    Default: "SASL_SCRAM_512_AUTH"
+    AllowedValues:
+      - "SASL_SCRAM_256_AUTH"
+      - "SASL_SCRAM_512_AUTH"
+      - "CLIENT_CERTIFICATE_TLS_AUTH"
+
+  KafkaAuthenticationSecretArn:
+    Type: String
+    Description: Arn of AWS secrets manager secret to access Kafka cluster
+    Default: ""
+
+Resources:
+  Trigger:
+    Type: AWS::ServiceCatalog::CloudFormationProvisionedProduct
+    Properties:
+      ProductName: LambdaTrigger
+      ProvisioningArtifactName: latest
+      ProvisionedProductName: !Sub ${FunctionName}-Trigger
+      ProvisioningParameters:
+        - Key: EventSourceArn
+          Value: !Ref EventSourceArn
+        - Key: FunctionName
+          Value: !Ref FunctionName
+        - Key: StartingPosition
+          Value: !Ref StartingPosition
+        - Key: Enabled
+          Value: !Ref Enabled
+        - Key: BatchSize
+          Value: !Ref BatchSize
+        - Key: BisectBatchOnFunctionError
+          Value: !Ref BisectBatchOnFunctionError
+        - Key: DiscardedRecordDestinationArn
+          Value: !Ref DiscardedRecordDestinationArn
+        - Key: MaximumBatchingWindowInSeconds
+          Value: !Ref MaximumBatchingWindowInSeconds
+        - Key: MaximumRecordAgeInSeconds
+          Value: !Ref MaximumRecordAgeInSeconds
+        - Key: MaximumRetryAttempts
+          Value: !Ref MaximumRetryAttempts
+        - Key: ParallelizationFactor
+          Value: !Ref ParallelizationFactor
+        - Key: FilterPattern
+          Value: !Ref FilterPattern
+      Tags:
+        - Key: doNotShutDown
+          Value: true
