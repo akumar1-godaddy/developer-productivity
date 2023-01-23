@@ -1,3 +1,4 @@
+import json
 import os
 
 import awswrangler as wr
@@ -30,10 +31,15 @@ _repo_workflow_runs_df = []
 
 
 def handler(event, context):
+    logger.info(f"starting GitHub Data Extraction with input {event}")
+    input_records = event.get('Records', None)
     since = event.get('since', None)
     until = event.get('until', None)
-    logger.info(f"starting GitHub Data Extraction with input {event}")
-    org = _get_orgs()
+    if input_records is not None and (since is None or until is None):
+        input_event = event['Records'][0]["body"]
+        input_event_json = json.loads(input_event)
+        since = input_event_json.get('since', None)
+        until = input_event_json.get('until', None)
 
     if since is None or until is None:
         since = (datetime.utcnow() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
@@ -43,7 +49,7 @@ def handler(event, context):
         until = datetime.strptime(until, '%Y-%m-%d')
 
     logger.info(f"value of date parameters are since:{since} .. until:{until} ")
-
+    org = _get_orgs()
     # 1. get all the members of the org
     _get_org_members(org, since)
     # 2. get all the repos of the org
@@ -60,8 +66,8 @@ def handler(event, context):
     # 6. get all the workflows for all repos of the org
     final_workflows_df = pd.concat(_repo_workflows_df)  # 6
     _write_to_s3(final_workflows_df, 'workflow_history', since)
-    final_workflow_runs_df = pd.concat(_repo_workflow_runs_df)  # 6
-    _write_to_s3(final_workflow_runs_df, 'workflow_run', since)
+    # final_workflow_runs_df = pd.concat(_repo_workflow_runs_df)  # 6
+    # _write_to_s3(final_workflow_runs_df, 'workflow_run', since)
     return "Productivity Data Downloaded!"
 
 
@@ -108,7 +114,7 @@ def _get_repos(org: Organization, since: datetime, until: datetime):
         _get_repo_commits(org_name, repo, since, until)
         _get_repo_pulls(org_name, repo, since, until)
         _get_repo_pulls_review(org_name, repo, since, until)
-        _get_repo_workflow_runs(org_name, repo, since, until)
+        # _get_repo_workflow_runs(org_name, repo, since, until)
         _get_repo_workflows(org_name=org_name, repo=repo)
     df = pd.DataFrame.from_records(repos)
     logger.info(f"writing data for repository")

@@ -1,0 +1,9 @@
+template_path: events-rule-base.yaml
+parameters:
+  Name: github-stats-event-rule
+  ScheduleExpression: "cron(15 00 * * ? *)"
+  TargetArnRef: !stack_output lambda-productivity.yaml::LambdaFunctionArn
+  TargetId: productivity
+  Description:
+dependencies:
+  - lambda-productivity.yaml

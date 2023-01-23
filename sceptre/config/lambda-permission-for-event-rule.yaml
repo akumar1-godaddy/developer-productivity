@@ -1,0 +1,11 @@
+template_path: lambda-permission-base.yaml
+
+parameters:
+  FunctionName: !stack_output lambda-productivity.yaml::LambdaFunctionName
+  Principal: "events.amazonaws.com"
+  SourceArn: !stack_output event-rule-productivity-lambda.yaml::Arn
+  PermissionProductName: event-rule-perms-lambda-productivity
+
+dependencies:
+  - event-rule-productivity-lambda.yaml
+  - lambda-productivity.yaml

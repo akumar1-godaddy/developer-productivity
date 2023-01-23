@@ -1,0 +1,10 @@
+template_path: lambda-trigger-base.yaml
+
+parameters:
+  EventSourceArn: !stack_output sqs-backfill-queue.yaml::QueueArn
+  FunctionName: !stack_output lambda-productivity.yaml::LambdaFunctionName
+  Enabled: 'true'
+
+dependencies:
+  - sqs-backfill-queue.yaml
+  - lambda-productivity.yaml
