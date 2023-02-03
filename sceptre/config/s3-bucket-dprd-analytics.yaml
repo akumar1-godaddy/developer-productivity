@@ -1,0 +1,27 @@
+template_path: s3-base.yaml
+parameters:
+  BucketNameSuffix: developer-analytics
+  ServiceCatalogVersion: 1.10.0
+  MoveToGlacierStorageDays: "-1"
+  CustomBucketPolicyJSON: '
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+                "Sid": "Statement1",
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": "arn:aws:iam::688051721285:user/athena-query-user"
+                },
+           "Action": [
+            "s3:GetObject",
+            "s3:GetObjectVersion",
+            "s3:ListBucket"
+               ],
+          "Resource": [
+            "arn:aws:s3:::gd-ckpetlbatch-{{ var.environment }}-developer-productivity",
+            "arn:aws:s3:::gd-ckpetlbatch-{{ var.environment }}-developer-productivity/*"
+          ]
+        }
+       ]
+     }'

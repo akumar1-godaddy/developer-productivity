@@ -24,10 +24,6 @@ Parameters:
     Description: The largest number of records that Lambda retrieves from your event source when invoking your function.
     Default: '1'
 
-  BisectBatchOnFunctionError:
-    Type: String
-    Description: If the function returns an error, split the batch in two and retry.
-    Default: 'false'
 
   DiscardedRecordDestinationArn:
     Type: String
@@ -43,11 +39,6 @@ Parameters:
     Type: Number
     Description: The maximum age of a record in seconds that Lambda sends to a function for processing.
     Default: '604800'
-
-  MaximumRetryAttempts:
-    Type: Number
-    Description: (Streams) The maximum number of times to retry when the function returns an error.
-    Default: '0'
 
   ParallelizationFactor:
     Type: Number
@@ -98,7 +89,7 @@ Resources:
     Type: AWS::ServiceCatalog::CloudFormationProvisionedProduct
     Properties:
       ProductName: LambdaTrigger
-      ProvisioningArtifactName: latest
+      ProvisioningArtifactName: 1.3.0
       ProvisionedProductName: !Sub ${FunctionName}-Trigger
       ProvisioningParameters:
         - Key: EventSourceArn
@@ -111,16 +102,12 @@ Resources:
           Value: !Ref Enabled
         - Key: BatchSize
           Value: !Ref BatchSize
-        - Key: BisectBatchOnFunctionError
-          Value: !Ref BisectBatchOnFunctionError
         - Key: DiscardedRecordDestinationArn
           Value: !Ref DiscardedRecordDestinationArn
         - Key: MaximumBatchingWindowInSeconds
           Value: !Ref MaximumBatchingWindowInSeconds
         - Key: MaximumRecordAgeInSeconds
           Value: !Ref MaximumRecordAgeInSeconds
-        - Key: MaximumRetryAttempts
-          Value: !Ref MaximumRetryAttempts
         - Key: ParallelizationFactor
           Value: !Ref ParallelizationFactor
         - Key: FilterPattern

@@ -9,7 +9,7 @@ parameters:
   CustomIAMRoleNameSuffix: lambda-productivity
   EnvironmentVariablesJson: |
     {
-      "TARGET_S3_BUCKET": "gd-ckpetlbatch-{{ var.environment}}-util"
+      "TARGET_S3_BUCKET": "gd-ckpetlbatch-{{ var.environment }}-developer-analytics"
     }
 dependencies:
   - ecr-productivity.yaml

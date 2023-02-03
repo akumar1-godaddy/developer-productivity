@@ -1,4 +1,4 @@
-template_path: events-rule-base.yaml
+template_path: event-rule-base.yaml
 parameters:
   Name: github-stats-event-rule
   ScheduleExpression: "cron(15 00 * * ? *)"

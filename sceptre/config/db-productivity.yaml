@@ -2,5 +2,5 @@ template_path: glue-db-base.yaml
 
 parameters:
   GlueDatabaseSCProvisioningArtifactName: "1.0.2"
-  DatabaseName: emr_cluster_metrics_local
-  Description: Database for emr_cluster_audit
+  DatabaseName: developer_productivity
+  Description: Database for developer_productivity

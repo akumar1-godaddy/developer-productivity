@@ -66,8 +66,8 @@ def handler(event, context):
     # 6. get all the workflows for all repos of the org
     final_workflows_df = pd.concat(_repo_workflows_df)  # 6
     _write_to_s3(final_workflows_df, 'workflow_history', since)
-    # final_workflow_runs_df = pd.concat(_repo_workflow_runs_df)  # 6
-    # _write_to_s3(final_workflow_runs_df, 'workflow_run', since)
+    final_workflow_runs_df = pd.concat(_repo_workflow_runs_df)  # 6
+    _write_to_s3(final_workflow_runs_df, 'workflow_run', since)
     return "Productivity Data Downloaded!"
 
 
@@ -114,7 +114,7 @@ def _get_repos(org: Organization, since: datetime, until: datetime):
         _get_repo_commits(org_name, repo, since, until)
         _get_repo_pulls(org_name, repo, since, until)
         _get_repo_pulls_review(org_name, repo, since, until)
-        # _get_repo_workflow_runs(org_name, repo, since, until)
+        _get_repo_workflow_runs(org_name, repo, since, until)
         _get_repo_workflows(org_name=org_name, repo=repo)
     df = pd.DataFrame.from_records(repos)
     logger.info(f"writing data for repository")
@@ -261,10 +261,3 @@ def _write_to_s3(df: pd.DataFrame, table_name: str, since: datetime):
         logger.info(f"data load complete for {table_name}")
     else:
         logger.info(f"data frame is empty for {table_name}")
-
-
-# if __name__ == "__main__":
-#     print("in main")
-#     until = datetime.strptime('2023-01-16', '%Y-%m-%d')
-#     since = until - timedelta(days=1)
-#     handler(since, until)
