@@ -1,0 +1,64 @@
+template_path: airflow-base.yaml
+parameters:
+  ServiceCatalogVersion: "3.10.0"
+  EnvironmentName: {{ var.project_code }}
+  AirflowVersion: 2.4.3
+  BucketNameSuffix: developer-analytics
+  DagS3Path: "dags"
+  EnvironmentClass: "mw1.small"
+  RequirementsS3Key: "dags/mwaa-requirements.txt"
+  PluginsS3Key: "dags/plugins.zip"
+  MaxWorkers: "2"
+  WeeklyMaintenanceWindowStart: "MON:00:00"
+  CustomIAMRoleNameSuffix: productivity-airflow-execution-role
+  PortfolioId: {{ var.portfolio_id }}
+  CustomAirflowConfigurationsJSON: |
+    {
+      "webserver.default_ui_timezone": "America/Phoenix",
+      "core.default_timezone":"America/Phoenix",
+      "core.load_examples": "False",
+      "core.enable_xcom_pickling": "True",
+      "core.dag_file_processor_timeout":"100",
+      "core.dagbag_import_timeout":"100",
+      "smtp.smtp_host": "relay-app.secureserver.net",
+      "smtp.smtp_mail_from": "no-reply-mwaa@godaddy.com",
+      "smtp.smtp_port": "25",
+      "smtp.smtp_ssl": "False",
+      "smtp.smtp_starttls": "True",
+      "core.lazy_load_plugins" : "False"
+    }
+  TagsJSON: |
+    {
+      "Name": "productivity",
+      "dataPipeline": "common",
+      "organization": "DNA",
+      "teamName": "dna",
+      "onCallGroup": "productivity",
+      "teamSlackChannel": "github-analytics",
+      "Demo": false
+    }
+  LoggingConfigurationsJSON: |
+    {
+       "DagProcessingLogs":{
+          "Enabled": true,
+          "LogLevel":"ERROR"
+       },
+       "SchedulerLogs":{
+          "Enabled": true,
+          "LogLevel":"WARNING"
+       },
+       "TaskLogs":{
+          "Enabled": true,
+          "LogLevel":"INFO"
+       },
+       "WebserverLogs":{
+          "Enabled": true,
+          "LogLevel":"ERROR"
+       },
+       "WorkerLogs":{
+          "Enabled": true,
+          "LogLevel":"INFO"
+       }
+    }
+dependencies:
+  - mwaa-custom-role.yaml

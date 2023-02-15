@@ -1,0 +1,4 @@
+--constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.4.3/constraints-3.10.txt"
+virtualenv==20.16.6
+apache-airflow-providers-amazon==6.0.0
+apache-airflow-providers-slack==6.0.0

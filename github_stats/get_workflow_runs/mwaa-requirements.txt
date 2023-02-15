@@ -1,0 +1,8 @@
+--constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.4.3/constraints-3.10.txt"
+apache-airflow-providers-amazon==6.0.0
+apache-airflow-providers-slack==6.0.0
+boto3==1.26.50
+PyGithub==1.57
+awswrangler>=2.15.0
+aws-lambda-powertools==2.6.0
+urllib3==1.26.14

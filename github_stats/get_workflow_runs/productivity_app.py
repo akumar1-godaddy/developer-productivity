@@ -11,8 +11,9 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
+from utils import get_workflow_runs
 from records import CreateRepositoryRecord, CreateCommitRecord, CreateMemberRecord, CreatePullRecord, \
-    CreatePullReviewRecord
+    CreatePullReviewRecord, CreateWorkflowRecord, CreateWorkflowRunRecord
 
 logger = Logger(service="github_stats")
 token = parameters.get_secret("github_auth_token", transform="json")
@@ -25,6 +26,8 @@ s3 = boto3.resource("s3")
 _repo_commits_df = []
 _repo_pulls_df = []
 _repo_pulls_review_df = []
+_repo_workflows_df = []
+_repo_workflow_runs_df = []
 
 
 def handler(event, context):
@@ -60,6 +63,11 @@ def handler(event, context):
     # 5. get all the pull request review comments_cnt for all repos of the org
     final_pulls_review_comments_df = pd.concat(_repo_pulls_review_df)
     _write_to_s3(final_pulls_review_comments_df, 'pull_request_review_comment', since)
+    # 6. get all the workflows for all repos of the org
+    final_workflows_df = pd.concat(_repo_workflows_df)  # 6
+    _write_to_s3(final_workflows_df, 'workflow_history', since)
+    final_workflow_runs_df = pd.concat(_repo_workflow_runs_df)  # 6
+    _write_to_s3(final_workflow_runs_df, 'workflow_run', since)
     return "Productivity Data Downloaded!"
 
 
@@ -106,6 +114,8 @@ def _get_repos(org: Organization, since: datetime, until: datetime):
         _get_repo_commits(org_name, repo, since, until)
         _get_repo_pulls(org_name, repo, since, until)
         _get_repo_pulls_review(org_name, repo, since, until)
+        _get_repo_workflow_runs(org_name, repo, since, until)
+        _get_repo_workflows(org_name=org_name, repo=repo)
     df = pd.DataFrame.from_records(repos)
     logger.info(f"writing data for repository")
     _write_to_s3(df, 'repository_history', since)
@@ -190,6 +200,52 @@ def _get_repo_pulls_review(org_name: str, repo: Repository, since: datetime, unt
             pull_reviews.append(asdict(review_record))
     df = pd.DataFrame.from_records(pull_reviews)
     _repo_pulls_review_df.append(df)
+
+
+def _get_repo_workflows(org_name: str, repo: Repository):
+    # logger.info(f"getting workflows for repo {repo.name}")
+    workflows = []
+
+    for workflow in repo.get_workflows():
+        workflow_record = CreateWorkflowRecord(org_name=org_name, repo_id=repo.id, repo_name=repo.name,
+                                               workflow_id=workflow.id, name=workflow.name, path=workflow.path,
+                                               state=workflow.state, created_at=workflow.created_at,
+                                               updated_at=workflow.updated_at, etl_load_utc_timestamp=datetime.utcnow()
+                                               )
+
+        workflows.append(asdict(workflow_record))
+    df = pd.DataFrame.from_records(workflows)
+    _repo_workflows_df.append(df)
+
+
+def _get_repo_workflow_runs(org_name: str, repo: Repository, since: datetime, until: datetime):
+    logger.info(f"getting workflow runs for repo {repo.name}")
+    workflow_runs = []
+    until_for_search = until - timedelta(days=1)
+    search_filter = f'{since.strftime("%Y-%m-%d")}..{until_for_search.strftime("%Y-%m-%d")}'
+
+    for workflow_run in get_workflow_runs(org_name=org_name, repo=repo.name, requester=repo._requester,
+                                          created=search_filter):
+        run_duration_ms = getattr(workflow_run.timing(), 'run_duration_ms', -1)
+        workflow_run_record = CreateWorkflowRunRecord(org_name=org_name, repo_id=repo.id, repo_name=repo.name,
+                                                      workflow_run_id=workflow_run.id,
+                                                      run_number=workflow_run.run_number,
+                                                      head_sha=workflow_run.head_sha,
+                                                      head_branch=workflow_run.head_branch,
+                                                      event=workflow_run.event, run_attempt=workflow_run.run_attempt,
+                                                      status=workflow_run.status, conclusion=workflow_run.conclusion,
+                                                      workflow_id=workflow_run.workflow_id,
+                                                      workflow_run_url=workflow_run.url,
+                                                      run_started_at_utc_ts=workflow_run.run_started_at,
+                                                      created_at_utc_ts=workflow_run.created_at,
+                                                      updated_at_utc_ts=workflow_run.updated_at,
+                                                      run_duration_ms=run_duration_ms,
+                                                      etl_load_utc_ts=datetime.utcnow()
+                                                      )
+
+        workflow_runs.append(asdict(workflow_run_record))
+    df = pd.DataFrame.from_records(workflow_runs)
+    _repo_workflow_runs_df.append(df)
 
 
 def _write_to_s3(df: pd.DataFrame, table_name: str, since: datetime):

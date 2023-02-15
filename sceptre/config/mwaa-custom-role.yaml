@@ -1,12 +1,12 @@
 template_path: iam-role-base.yaml
 parameters:
   IAMRoleProvisioningName: "1.0.7"
-  RoleNameSuffix: airflow-execution-role
+  RoleNameSuffix: productivity-airflow-execution-role
   AssumingServices:
     - airflow.amazonaws.com
     - s3.amazonaws.com
     - airflow-env.amazonaws.com
     - athena.amazonaws.com
   ManagedPolicyArns:
-    - !stack_output iam/mwaa-custom-role-policy.yaml::PolicyARN
-    - !stack_output iam/mwaa-custom-role-policy-extra.yaml::PolicyARN
+    - !stack_output mwaa-custom-role-policy.yaml::PolicyARN
+    - !stack_output mwaa-custom-role-policy-extra.yaml::PolicyARN

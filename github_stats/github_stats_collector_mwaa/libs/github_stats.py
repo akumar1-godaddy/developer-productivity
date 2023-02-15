@@ -1,66 +1,41 @@
-import json
-import os
-
 import awswrangler as wr
 import pandas as pd
-from aws_lambda_powertools.utilities import parameters
-from aws_lambda_powertools import Logger
 from github import Github, Organization, Repository, GithubException
 import boto3
 from dataclasses import asdict
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
-from records import CreateRepositoryRecord, CreateCommitRecord, CreateMemberRecord, CreatePullRecord, \
-    CreatePullReviewRecord
+from libs.utils import get_workflow_runs
+from libs.records import CreateRepositoryRecord, CreateCommitRecord, CreateMemberRecord, CreatePullRecord, \
+    CreatePullReviewRecord, CreateWorkflowRecord, CreateWorkflowRunRecord
 
-logger = Logger(service="github_stats")
-token = parameters.get_secret("github_auth_token", transform="json")
-assert isinstance(token, dict)
-target_s3_bucket = os.environ.get("TARGET_S3_BUCKET")
+
+def get_secret(secret_id):
+    import json
+    from botocore.exceptions import ClientError
+    secrets_manager_client = boto3.client('secretsmanager')
+    try:
+        response = secrets_manager_client.get_secret_value(
+            SecretId=secret_id
+        )
+        secret_value = response['SecretString']
+        secret_dict = json.loads(secret_value)
+        return secret_dict["github_pat"]
+    except ClientError as e:
+        print(f"Error retrieving secret: {e}")
+
+
+target_s3_bucket = ''
 db_name = 'developer_productivity'
-
-github = Github(token["github_pat"])
+secret =get_secret('github_auth_token')
+github = Github(secret)
 s3 = boto3.resource("s3")
 _repo_commits_df = []
 _repo_pulls_df = []
 _repo_pulls_review_df = []
-
-
-def handler(event, context):
-    logger.info(f"starting GitHub Data Extraction with input {event}")
-    input_records = event.get('Records', None)
-    since = event.get('since', None)
-    until = event.get('until', None)
-    if input_records is not None and (since is None or until is None):
-        input_event = event['Records'][0]["body"]
-        input_event_json = json.loads(input_event)
-        since = input_event_json.get('since', None)
-        until = input_event_json.get('until', None)
-
-    if since is None or until is None:
-        since = (datetime.utcnow() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-        until = (datetime.utcnow()).replace(hour=0, minute=0, second=0, microsecond=0)
-    else:
-        since = datetime.strptime(since, '%Y-%m-%d')
-        until = datetime.strptime(until, '%Y-%m-%d')
-
-    logger.info(f"value of date parameters are since:{since} .. until:{until} ")
-    org = _get_orgs()
-    # 1. get all the members of the org
-    _get_org_members(org, since)
-    # 2. get all the repos of the org
-    _get_repos(org, since, until)
-    # 3. get all the repo commits for the org
-    final_commits_df = pd.concat(_repo_commits_df)
-    _write_to_s3(final_commits_df, 'commit', since)
-    # 4. get all the open pull requests for the org
-    final_pulls_df = pd.concat(_repo_pulls_df)
-    _write_to_s3(final_pulls_df, 'pull_request', since)
-    # 5. get all the pull request review comments_cnt for all repos of the org
-    final_pulls_review_comments_df = pd.concat(_repo_pulls_review_df)
-    _write_to_s3(final_pulls_review_comments_df, 'pull_request_review_comment', since)
-    return "Productivity Data Downloaded!"
+_repo_workflows_df = []
+_repo_workflow_runs_df = []
 
 
 def _get_orgs() -> Organization:
@@ -72,9 +47,9 @@ def _get_orgs() -> Organization:
 
 
 def _get_org_members(org: Organization, since: datetime):
-    logger.info(f"""Get all members for the org organizations""")
+    print(f"""Get all members for the org organizations""")
     org_name = org.login
-    logger.info(f"getting members for org  {org_name}")
+    print(f"getting members for org  {org_name}")
     members = []
     for member in org.get_members():
         member_record = CreateMemberRecord(org_name=org_name, member_id=member.id,
@@ -84,15 +59,15 @@ def _get_org_members(org: Organization, since: datetime):
 
         members.append(asdict(member_record))
     df = pd.DataFrame.from_records(members)
-    logger.info(f"writing data for member")
+    print(f"writing data for member")
     _write_to_s3(df, 'member_history', since)
-    logger.info(f"data load complete for member")
+    print(f"data load complete for member")
 
 
 def _get_repos(org: Organization, since: datetime, until: datetime):
     total_repos = org.get_repos(type='internal').totalCount
     org_name = org.login
-    logger.info(f"total repository count in {org_name} is {total_repos}")
+    print(f"total repository count in {org_name} is {total_repos}")
     repos = []
     for repo in org.get_repos(type='internal'):
         repository_record = CreateRepositoryRecord(repo_id=repo.id, org_name=org_name, repo_name=repo.name,
@@ -106,15 +81,17 @@ def _get_repos(org: Organization, since: datetime, until: datetime):
         _get_repo_commits(org_name, repo, since, until)
         _get_repo_pulls(org_name, repo, since, until)
         _get_repo_pulls_review(org_name, repo, since, until)
+        # _get_repo_workflow_runs(org_name, repo, since, until)
+        _get_repo_workflows(org_name=org_name, repo=repo)
     df = pd.DataFrame.from_records(repos)
-    logger.info(f"writing data for repository")
+    print(f"writing data for repository")
     _write_to_s3(df, 'repository_history', since)
-    logger.info(f"data load complete for repository")
+    print(f"data load complete for repository")
 
 
 def _get_repo_commits(org_name: str, repo: Repository, since: datetime, until: datetime):
     repo_id = repo.id
-    # logger.info(f"getting commits for repo {repo.name}")
+    # print(f"getting commits for repo {repo.name}")
     commits = []
     try:
         for commit in repo.get_commits(since=since, until=until):
@@ -136,7 +113,7 @@ def _get_repo_commits(org_name: str, repo: Repository, since: datetime, until: d
                                                )
             commits.append(asdict(commit_record))
     except GithubException as ge:
-        logger.exception(f'error getting the commits for repo id {repo_id} {ge}')
+        print(f'error getting the commits for repo id {repo_id} {ge}')
 
     if len(commits) > 0:
         df = pd.DataFrame.from_records(commits)
@@ -144,7 +121,7 @@ def _get_repo_commits(org_name: str, repo: Repository, since: datetime, until: d
 
 
 def _get_repo_pulls(org_name: str, repo: Repository, since: datetime, until: datetime):
-    # logger.info(f"getting pulls for repo {repo.name}")
+    # print(f"getting pulls for repo {repo.name}")
     pulls = []
     """when a PR is merged its property updated_at is updated  """
     for pull in repo.get_pulls(state='all'):
@@ -171,7 +148,7 @@ def _get_repo_pulls(org_name: str, repo: Repository, since: datetime, until: dat
 
 
 def _get_repo_pulls_review(org_name: str, repo: Repository, since: datetime, until: datetime):
-    # logger.info(f"getting reviews for repo {repo.name}")
+    # print(f"getting reviews for repo {repo.name}")
     pull_reviews = []
 
     for review in repo.get_pulls_review_comments(since=since):
@@ -192,16 +169,89 @@ def _get_repo_pulls_review(org_name: str, repo: Repository, since: datetime, unt
     _repo_pulls_review_df.append(df)
 
 
+def _get_repo_workflows(org_name: str, repo: Repository):
+    # print(f"getting workflows for repo {repo.name}")
+    workflows = []
+
+    for workflow in repo.get_workflows():
+        workflow_record = CreateWorkflowRecord(org_name=org_name, repo_id=repo.id, repo_name=repo.name,
+                                               workflow_id=workflow.id, name=workflow.name, path=workflow.path,
+                                               state=workflow.state, created_at=workflow.created_at,
+                                               updated_at=workflow.updated_at, etl_load_utc_timestamp=datetime.utcnow()
+                                               )
+
+        workflows.append(asdict(workflow_record))
+    df = pd.DataFrame.from_records(workflows)
+    _repo_workflows_df.append(df)
+
+
+def _get_repo_workflow_runs(org_name: str, repo: Repository, since: datetime, until: datetime):
+    print(f"getting workflow runs for repo {repo.name}")
+    workflow_runs = []
+    until_for_search = until - timedelta(days=1)
+    search_filter = f'{since.strftime("%Y-%m-%d")}..{until_for_search.strftime("%Y-%m-%d")}'
+
+    for workflow_run in get_workflow_runs(org_name=org_name, repo=repo.name, requester=repo._requester,
+                                          created=search_filter):
+        run_duration_ms = getattr(workflow_run.timing(), 'run_duration_ms', -1)
+        workflow_run_record = CreateWorkflowRunRecord(org_name=org_name, repo_id=repo.id, repo_name=repo.name,
+                                                      workflow_run_id=workflow_run.id,
+                                                      run_number=workflow_run.run_number,
+                                                      head_sha=workflow_run.head_sha,
+                                                      head_branch=workflow_run.head_branch,
+                                                      event=workflow_run.event, run_attempt=workflow_run.run_attempt,
+                                                      status=workflow_run.status, conclusion=workflow_run.conclusion,
+                                                      workflow_id=workflow_run.workflow_id,
+                                                      workflow_run_url=workflow_run.url,
+                                                      run_started_at_utc_ts=workflow_run.run_started_at,
+                                                      created_at_utc_ts=workflow_run.created_at,
+                                                      updated_at_utc_ts=workflow_run.updated_at,
+                                                      run_duration_ms=run_duration_ms,
+                                                      etl_load_utc_ts=datetime.utcnow()
+                                                      )
+
+        workflow_runs.append(asdict(workflow_run_record))
+    df = pd.DataFrame.from_records(workflow_runs)
+    _repo_workflow_runs_df.append(df)
+
+
 def _write_to_s3(df: pd.DataFrame, table_name: str, since: datetime):
     if not df.empty:
-        logger.info(f"writing data for {table_name}")
+        print(f"writing data for {table_name}")
         table_load_date = since.strftime("%Y-%m-%d")
-        path: str = f's3://{target_s3_bucket}/db={db_name}/table={table_name}/load_date={table_load_date}/data.parquet'
+        path: str = f's3://gd-ckpetlbatch-prod-developer-analytics/db={db_name}/table={table_name}/load_date={table_load_date}/data.parquet'
         wr.s3.to_parquet(
             df=df,
             path=path
             # mode='overwrite'
         )
-        logger.info(f"data load complete for {table_name}")
+        print(f"data load complete for {table_name}")
     else:
-        logger.info(f"data frame is empty for {table_name}")
+        print(f"data frame is empty for {table_name}")
+
+
+def main(since, until):
+    print(f"starting GitHub Data Extraction")
+    since = datetime.strptime(since, '%Y-%m-%d')
+    until = datetime.strptime(until, '%Y-%m-%d')
+    print(f"value of date parameters are since:{since} .. until:{until} ")
+    org = _get_orgs()
+    # 1. get all the members of the org
+    _get_org_members(org, since)
+    # 2. get all the repos of the org
+    _get_repos(org, since, until)
+    # 3. get all the repo commits for the org
+    final_commits_df = pd.concat(_repo_commits_df)
+    _write_to_s3(final_commits_df, 'commit', since)
+    # 4. get all the open pull requests for the org
+    final_pulls_df = pd.concat(_repo_pulls_df)
+    _write_to_s3(final_pulls_df, 'pull_request', since)
+    # 5. get all the pull request review comments_cnt for all repos of the org
+    final_pulls_review_comments_df = pd.concat(_repo_pulls_review_df)
+    _write_to_s3(final_pulls_review_comments_df, 'pull_request_review_comment', since)
+    # 6. get all the workflows for all repos of the org
+    final_workflows_df = pd.concat(_repo_workflows_df)  # 6
+    _write_to_s3(final_workflows_df, 'workflow_history', since)
+    # final_workflow_runs_df = pd.concat(_repo_workflow_runs_df)  # 6
+    # _write_to_s3(final_workflow_runs_df, 'workflow_run', since)
+    return "Productivity Data Downloaded!"

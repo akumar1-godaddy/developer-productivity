@@ -1,6 +1,6 @@
 template_path: iam-policy-base.yaml
 parameters:
-  PolicyNameSuffix: airflow-execution-role-policy
+  PolicyNameSuffix: productivity-airflow-execution-role-policy
   PolicyJSON: |
     {
         "Version": "2012-10-17",
@@ -59,7 +59,7 @@ parameters:
                     "logs:GetQueryResults",
                     "logs:PutLogEvents"
                 ],
-                "Resource": "arn:aws:logs:us-west-2:{{ var.account_id }}:log-group:airflow-test*",
+                "Resource": "arn:aws:logs:us-west-2:{{ var.account_id }}:log-group:airflow-{{ var.project_code }}-*",
                 "Effect": "Allow"
             },
             {

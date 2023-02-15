@@ -1,0 +1,6 @@
+requests==2.28.2
+boto3==1.26.50
+PyGithub==1.57
+awswrangler==2.19.0
+aws-lambda-powertools==2.6.0
+urllib3==1.26.14

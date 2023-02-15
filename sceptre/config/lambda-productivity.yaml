@@ -1,7 +1,7 @@
 template_path: lambda-base.yaml
 parameters:
   LambdaName: productivity
-  MemorySize: "10240"
+  MemorySize: "10200"
   Runtime: "python3.8"
   Timeout: "900"
   ContainerImageUri: {{ var.account_id }}.dkr.ecr.{{ var.region }}.amazonaws.com/productivity:latest
